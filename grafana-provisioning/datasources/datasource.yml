@@ -3,7 +3,7 @@ datasources:
   - name: InfluxDB
     type: influxdb
     access: proxy
-    database: iescelia_db
+    database: iotunla_db
     user: root
     password: root
     url: http://influxdb:8086
