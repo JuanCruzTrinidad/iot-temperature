@@ -12,9 +12,9 @@ unla | ioma /heladera-<id>/vacuna-<id>/temperature
 Por ejemplotendríamos los siguientes *topics*:
 
 ```
-unla/heladera-1/sputnik/temperature
-unla/heladera-2/sputnik/temperature
-ioma/heladera-3/sputnik/temperature
+unla/sputnik/heladera-1/temperature
+unla/sputnik/heladera-2/temperature
+ioma/sputnik/heladera-3/temperature
 ```
 
 También existirá un agente de [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) que estará suscrito a los  *topics* del [*broker* MQTT](http://mqtt.org) donde se publican los valores recogidos por los sensores.  El agente de [Telegraf](https://www.influxdata.com/time-series-platform/telegraf/) insertará los valores que recoge del [*broker* MQTT](http://mqtt.org) en una base de datos [InfluxDB](https://www.influxdata.com/), que es un sistema gestor de bases de datos diseñado para almacenar series temporales de datos.Finalmente tendremos un servicio web [Grafana](https://grafana.com) que nos permitirá visualizar los datos en un panel de control.
