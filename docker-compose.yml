@@ -30,7 +30,7 @@ services:
       - INFLUXDB_HTTP_AUTH_ENABLED=true
 
   grafana:
-    image: grafana/grafana:7.4.0
+    image: grafana/grafana:latest
     ports:
       - 3000:3000
     volumes:

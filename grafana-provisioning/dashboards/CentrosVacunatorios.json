@@ -8,16 +8,82 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
   },
   "editable": true,
+  "fiscalYearStartMonth": 0,
   "gnetId": null,
   "graphTooltip": 0,
+  "iteration": 1636217393076,
   "links": [],
+  "liveNow": false,
   "panels": [
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Sputnik",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                -10
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "A",
+                "10s",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "keep_state",
+        "for": "2m",
+        "frequency": "1m",
+        "handler": 1,
+        "message": "La temperatura no es la correcta en la heladera con id $heladera.",
+        "name": "Sputnik alert",
+        "noDataState": "ok",
+        "notifications": [
+          {
+            "uid": "-UkbwCF7z"
+          },
+          {
+            "uid": "W5K7lCF7k"
+          }
+        ]
+      },
       "datasource": "InfluxDB",
       "description": "",
       "fieldConfig": {
@@ -35,7 +101,8 @@
             "hideFrom": {
               "graph": false,
               "legend": false,
-              "tooltip": false
+              "tooltip": false,
+              "viz": false
             },
             "lineInterpolation": "smooth",
             "lineStyle": {
@@ -47,18 +114,17 @@
               "type": "linear"
             },
             "showPoints": "always",
-            "spanNulls": true
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "decimals": 2,
-          "mappings": [
-            {
-              "from": "",
-              "id": 1,
-              "text": "",
-              "to": "",
-              "type": 1
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -88,7 +154,7 @@
         "h": 7,
         "w": 14,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 2,
       "links": [],
@@ -105,7 +171,7 @@
           "displayMode": "table",
           "placement": "bottom"
         },
-        "tooltipOptions": {
+        "tooltip": {
           "mode": "single"
         }
       },
@@ -131,15 +197,15 @@
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
-          "rawQuery": false,
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter and \"heladera\" = $heladera GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -158,6 +224,14 @@
           ]
         }
       ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "gt",
+          "value": -10,
+          "visible": true
+        }
+      ],
       "timeFrom": null,
       "timeShift": null,
       "title": "Sputnik",
@@ -171,16 +245,16 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
-              "$$hashKey": "object:339",
-              "id": 0,
-              "op": "=",
-              "text": "N/A",
-              "type": 1,
-              "value": "null"
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
           "max": 20,
@@ -208,9 +282,9 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 7,
+        "w": 10,
         "x": 14,
-        "y": 0
+        "y": 1
       },
       "id": 4,
       "interval": null,
@@ -229,7 +303,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "7.4.0",
+      "pluginVersion": "8.2.3",
       "targets": [
         {
           "groupBy": [
@@ -246,10 +320,11 @@
               "type": "fill"
             }
           ],
+          "hide": false,
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
@@ -257,7 +332,7 @@
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -308,13 +383,20 @@
           }
         ],
         "executionErrorState": "keep_state",
-        "for": "2m",
-        "frequency": "30s",
+        "for": "5m",
+        "frequency": "2m",
         "handler": 1,
-        "message": "Se sobrepaso el primer maximo.",
+        "message": "Se sobrepaso el primer maximo en la heladera con id $heladera",
         "name": "Sputnik alert",
-        "noDataState": "keep_state",
-        "notifications": []
+        "noDataState": "ok",
+        "notifications": [
+          {
+            "uid": "-UkbwCF7z"
+          },
+          {
+            "uid": "W5K7lCF7k"
+          }
+        ]
       },
       "aliasColors": {},
       "bars": false,
@@ -324,12 +406,6 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "color": {},
-          "custom": {},
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          },
           "unit": "short"
         },
         "overrides": []
@@ -340,7 +416,7 @@
         "h": 6,
         "w": 14,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "hiddenSeries": false,
       "id": 7,
@@ -361,7 +437,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "7.4.0",
+      "pluginVersion": "8.2.3",
       "pointradius": 2,
       "points": true,
       "renderer": "flot",
@@ -389,15 +465,15 @@
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
-          "rawQuery": false,
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter and \"heladera\" = $heladera GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -469,43 +545,35 @@
       }
     },
     {
-      "dashboardFilter": "Centros vacunatorios",
-      "dashboardTags": [],
       "datasource": null,
       "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {},
-          "custom": {},
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "folderId": null,
       "gridPos": {
-        "h": 7,
-        "w": 7,
+        "h": 6,
+        "w": 10,
         "x": 14,
-        "y": 7
+        "y": 8
       },
       "id": 6,
-      "limit": "10",
-      "nameFilter": "Sputnik alert",
-      "onlyAlertsOnDashboard": true,
-      "pluginVersion": "7.4.0",
-      "show": "changes",
-      "sortOrder": 5,
-      "stateFilter": [
-        "ok",
-        "paused",
-        "no_data",
-        "execution_error",
-        "alerting",
-        "pending"
-      ],
+      "options": {
+        "alertName": "Sputnik alert",
+        "dashboardAlerts": true,
+        "dashboardTitle": "Centros vacunatorios",
+        "folderId": null,
+        "maxItems": 5,
+        "showOptions": "changes",
+        "sortOrder": 5,
+        "stateFilter": {
+          "alerting": true,
+          "execution_error": true,
+          "no_data": true,
+          "ok": true,
+          "paused": true,
+          "pending": true
+        },
+        "tags": []
+      },
+      "pluginVersion": "8.2.3",
+      "repeat": null,
       "targets": [
         {
           "groupBy": [
@@ -550,11 +618,36 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 27,
+  "schemaVersion": 31,
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "allValue": null,
+        "current": {
+          "selected": true,
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": null,
+        "definition": "select heladera from mqtt_consumer",
+        "description": "Heladera de la cual sale la alarma",
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "Heladera",
+        "multi": false,
+        "name": "heladera",
+        "options": [],
+        "query": "select heladera from mqtt_consumer",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-1h",
@@ -588,5 +681,5 @@
   "timezone": "browser",
   "title": "Centros vacunatorios",
   "uid": "P-BEgsdMz",
-  "version": 9
+  "version": 12
 }
