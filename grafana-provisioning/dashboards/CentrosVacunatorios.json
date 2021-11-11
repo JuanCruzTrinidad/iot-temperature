@@ -8,6 +8,12 @@
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
+        },
         "type": "dashboard"
       }
     ]
@@ -18,6 +24,55 @@
   "links": [],
   "panels": [
     {
+      "collapsed": false,
+      "datasource": null,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Vacunas",
+      "type": "row"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                7
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "Sputnik",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "30s",
+        "handler": 1,
+        "name": "Sputnik alert",
+        "noDataState": "alerting",
+        "notifications": []
+      },
       "datasource": "InfluxDB",
       "description": "",
       "fieldConfig": {
@@ -35,7 +90,8 @@
             "hideFrom": {
               "graph": false,
               "legend": false,
-              "tooltip": false
+              "tooltip": false,
+              "viz": false
             },
             "lineInterpolation": "smooth",
             "lineStyle": {
@@ -47,18 +103,17 @@
               "type": "linear"
             },
             "showPoints": "always",
-            "spanNulls": true
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
           },
           "decimals": 2,
-          "mappings": [
-            {
-              "from": "",
-              "id": 1,
-              "text": "",
-              "to": "",
-              "type": 1
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -67,28 +122,49 @@
                 "value": null
               },
               {
-                "color": "green",
-                "value": -20
-              },
-              {
                 "color": "#EAB839",
-                "value": -10
+                "value": 4
               },
               {
                 "color": "red",
-                "value": 5
+                "value": 7
               }
             ]
           },
           "unit": "short"
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "Sputnik - ioma - Heladera n 5"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 7,
         "w": 14,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 2,
       "links": [],
@@ -105,7 +181,7 @@
           "displayMode": "table",
           "placement": "bottom"
         },
-        "tooltipOptions": {
+        "tooltip": {
           "mode": "single"
         }
       },
@@ -113,12 +189,31 @@
       "repeat": null,
       "targets": [
         {
+          "alias": "Sputnik - $tag_centro - Heladera n $tag_heladera",
           "groupBy": [
             {
               "params": [
                 "$__interval"
               ],
               "type": "time"
+            },
+            {
+              "params": [
+                "centro"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "heladera"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
             },
             {
               "params": [
@@ -131,15 +226,15 @@
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
-          "rawQuery": false,
-          "refId": "A",
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" = 'unla/temperature' AND \"centro\" = 'ioma' OR \"centro\" = 'unla' ) AND \"vacuna\" = 'sputnik' AND $timeFilter GROUP BY time($__interval), \"centro\", \"heladera\", \"vacuna\" fill(null)",
+          "rawQuery": true,
+          "refId": "Sputnik",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -152,10 +247,36 @@
           "tags": [
             {
               "key": "topic",
-              "operator": "=~",
-              "value": "/unla\\/sputnik/"
+              "operator": "=",
+              "value": "unla/temperature"
+            },
+            {
+              "condition": "AND",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            },
+            {
+              "condition": "OR",
+              "key": "centro",
+              "operator": "=",
+              "value": "unla"
+            },
+            {
+              "condition": "AND",
+              "key": "vacuna",
+              "operator": "=",
+              "value": "sputnik"
             }
           ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "gt",
+          "value": 7,
+          "visible": true
         }
       ],
       "timeFrom": null,
@@ -171,16 +292,16 @@
           "color": {
             "mode": "thresholds"
           },
-          "custom": {},
           "decimals": 2,
           "mappings": [
             {
-              "$$hashKey": "object:339",
-              "id": 0,
-              "op": "=",
-              "text": "N/A",
-              "type": 1,
-              "value": "null"
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
             }
           ],
           "max": 20,
@@ -207,16 +328,19 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 7,
+        "h": 6,
+        "w": 5,
         "x": 14,
-        "y": 0
+        "y": 1
       },
       "id": 4,
       "interval": null,
       "links": [],
       "maxDataPoints": 100,
       "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
         "orientation": "horizontal",
         "reduceOptions": {
           "calcs": [
@@ -225,13 +349,13 @@
           "fields": "",
           "values": false
         },
-        "showThresholdLabels": true,
-        "showThresholdMarkers": true,
-        "text": {}
+        "text": {},
+        "textMode": "auto"
       },
-      "pluginVersion": "7.4.0",
+      "pluginVersion": "8.0.6",
       "targets": [
         {
+          "alias": "$tag_vacuna",
           "groupBy": [
             {
               "params": [
@@ -241,23 +365,30 @@
             },
             {
               "params": [
+                "vacuna"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
                 "null"
               ],
               "type": "fill"
             }
           ],
+          "hide": false,
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
-          "rawQuery": true,
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": false,
           "refId": "A",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -271,13 +402,454 @@
             {
               "key": "topic",
               "operator": "=",
-              "value": "iescelia/aula22/co2"
+              "value": "unla/temperature"
             }
           ]
         }
       ],
-      "title": "Alerta",
-      "type": "gauge"
+      "title": "Último valor recibido",
+      "type": "stat"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "semi-dark-blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 5,
+        "x": 19,
+        "y": 1
+      },
+      "id": 14,
+      "options": {
+        "displayMode": "gradient",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "distinctCount"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showUnfilled": true,
+        "text": {}
+      },
+      "pluginVersion": "8.0.6",
+      "targets": [
+        {
+          "alias": "$tag_vacuna",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "0"
+              ],
+              "type": "fill"
+            }
+          ],
+          "measurement": "mqtt_consumer",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "refId": "B",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "temperature"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "distinct"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "topic",
+              "operator": "=",
+              "value": "unla/temperature"
+            }
+          ]
+        }
+      ],
+      "title": "Tipo de vacuna por heladera",
+      "type": "bargauge"
+    },
+    {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "center",
+            "displayMode": "color-text",
+            "filterable": true
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 142
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "heladera"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "vacuna"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 103
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "temperature"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 148
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 10,
+        "x": 14,
+        "y": 7
+      },
+      "id": 16,
+      "options": {
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "8.0.6",
+      "targets": [
+        {
+          "groupBy": [
+            {
+              "params": [
+                "heladera"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
+            }
+          ],
+          "measurement": "mqtt_consumer",
+          "orderByTime": "DESC",
+          "policy": "default",
+          "refId": "C",
+          "resultFormat": "table",
+          "select": [
+            [
+              {
+                "params": [
+                  "temperature"
+                ],
+                "type": "field"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "topic",
+              "operator": "=",
+              "value": "unla/temperature"
+            }
+          ]
+        }
+      ],
+      "title": "Últimos datos obtenidos",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                -55
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "Pfizer",
+                "1m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "30s",
+        "handler": 1,
+        "name": "Pfizer alert",
+        "noDataState": "alerting",
+        "notifications": []
+      },
+      "datasource": "InfluxDB",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": -65
+              },
+              {
+                "color": "red",
+                "value": -55
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 14,
+        "x": 0,
+        "y": 8
+      },
+      "id": 10,
+      "links": [],
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max",
+            "min",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "alias": "Pfizer - $tag_centro - Heladera n $tag_heladera",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "centro"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "heladera"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "mqtt_consumer",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" = 'unla/temperature' AND \"centro\" = 'ioma' OR \"centro\" = 'unla')  AND \"vacuna\" = 'pfizer' AND $timeFilter GROUP BY time($__interval), \"centro\", \"heladera\", \"vacuna\" fill(null)",
+          "rawQuery": true,
+          "refId": "Pfizer",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "temperature"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "topic",
+              "operator": "=",
+              "value": "unla/temperature"
+            },
+            {
+              "condition": "AND",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            },
+            {
+              "condition": "OR",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "gt",
+          "value": -55,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Pfizer",
+      "type": "timeseries"
     },
     {
       "alert": {
@@ -295,7 +867,7 @@
             },
             "query": {
               "params": [
-                "A",
+                "Moderna",
                 "1m",
                 "now"
               ]
@@ -307,76 +879,129 @@
             "type": "query"
           }
         ],
-        "executionErrorState": "keep_state",
-        "for": "2m",
+        "executionErrorState": "alerting",
+        "for": "1m",
         "frequency": "30s",
         "handler": 1,
-        "message": "Se sobrepaso el primer maximo.",
-        "name": "Sputnik alert",
-        "noDataState": "keep_state",
+        "name": "Moderna alert",
+        "noDataState": "no_data",
         "notifications": []
       },
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
       "datasource": "InfluxDB",
       "description": "",
       "fieldConfig": {
         "defaults": {
-          "color": {},
-          "custom": {},
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
-            "steps": []
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": -15
+              },
+              {
+                "color": "red",
+                "value": -10
+              }
+            ]
           },
           "unit": "short"
         },
         "overrides": []
       },
-      "fill": 1,
-      "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 14,
         "x": 0,
-        "y": 7
+        "y": 15
       },
-      "hiddenSeries": false,
-      "id": 7,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 3,
+      "id": 11,
       "links": [],
-      "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "graph": {},
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max",
+            "min",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
       },
-      "percentage": false,
       "pluginVersion": "7.4.0",
-      "pointradius": 2,
-      "points": true,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
       "targets": [
         {
+          "alias": "Moderna - $tag_centro - Heladera n $tag_heladera",
           "groupBy": [
             {
               "params": [
                 "$__interval"
               ],
               "type": "time"
+            },
+            {
+              "params": [
+                "centro"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "heladera"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
             },
             {
               "params": [
@@ -389,15 +1014,15 @@
           "measurement": "mqtt_consumer",
           "orderByTime": "ASC",
           "policy": "default",
-          "query": "SELECT mean(\"value\") FROM \"mqtt_consumer\" WHERE (\"topic\" =~ /unla\\/sputnik/) AND $timeFilter GROUP BY time($__interval) fill(null)",
-          "rawQuery": false,
-          "refId": "A",
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" = 'unla/temperature' AND \"centro\" = 'ioma' OR \"centro\" = 'unla')  AND \"vacuna\" = 'moderna' AND $timeFilter GROUP BY time($__interval), \"centro\", \"heladera\", \"vacuna\" fill(null)",
+          "rawQuery": true,
+          "refId": "Moderna",
           "resultFormat": "time_series",
           "select": [
             [
               {
                 "params": [
-                  "value"
+                  "temperature"
                 ],
                 "type": "field"
               },
@@ -410,8 +1035,20 @@
           "tags": [
             {
               "key": "topic",
-              "operator": "=~",
-              "value": "/unla\\/sputnik/"
+              "operator": "=",
+              "value": "unla/temperature"
+            },
+            {
+              "condition": "AND",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            },
+            {
+              "condition": "OR",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
             }
           ]
         }
@@ -419,93 +1056,46 @@
       "thresholds": [
         {
           "colorMode": "critical",
-          "fill": true,
-          "line": true,
           "op": "gt",
           "value": -10,
           "visible": true
         }
       ],
       "timeFrom": null,
-      "timeRegions": [],
       "timeShift": null,
-      "title": "Sputnik",
-      "tooltip": {
-        "shared": false,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "$$hashKey": "object:796",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "$$hashKey": "object:797",
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
+      "title": "Moderna",
+      "type": "timeseries"
     },
     {
-      "dashboardFilter": "Centros vacunatorios",
-      "dashboardTags": [],
       "datasource": null,
       "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {},
-          "custom": {},
-          "thresholds": {
-            "mode": "absolute",
-            "steps": []
-          }
-        },
-        "overrides": []
-      },
-      "folderId": null,
       "gridPos": {
-        "h": 7,
-        "w": 7,
+        "h": 13,
+        "w": 10,
         "x": 14,
-        "y": 7
+        "y": 16
       },
       "id": 6,
-      "limit": "10",
-      "nameFilter": "Sputnik alert",
-      "onlyAlertsOnDashboard": true,
-      "pluginVersion": "7.4.0",
-      "show": "changes",
-      "sortOrder": 5,
-      "stateFilter": [
-        "ok",
-        "paused",
-        "no_data",
-        "execution_error",
-        "alerting",
-        "pending"
-      ],
+      "options": {
+        "alertName": "Sputnik alert",
+        "dashboardAlerts": true,
+        "dashboardTitle": "Centros vacunatorios",
+        "folderId": null,
+        "maxItems": 5,
+        "showOptions": "changes",
+        "sortOrder": 5,
+        "stateFilter": {
+          "alerting": true,
+          "execution_error": true,
+          "no_data": true,
+          "ok": true,
+          "paused": true,
+          "pending": true
+        },
+        "tags": []
+      },
+      "pluginVersion": "8.0.6",
+      "repeat": null,
       "targets": [
         {
           "groupBy": [
@@ -524,7 +1114,7 @@
           ],
           "orderByTime": "ASC",
           "policy": "default",
-          "refId": "A",
+          "refId": "D",
           "resultFormat": "time_series",
           "select": [
             [
@@ -547,17 +1137,232 @@
       "timeShift": null,
       "title": "Historico de alertas",
       "type": "alertlist"
+    },
+    {
+      "alert": {
+        "alertRuleTags": {},
+        "conditions": [
+          {
+            "evaluator": {
+              "params": [
+                7
+              ],
+              "type": "gt"
+            },
+            "operator": {
+              "type": "and"
+            },
+            "query": {
+              "params": [
+                "Astrazeneca",
+                "5m",
+                "now"
+              ]
+            },
+            "reducer": {
+              "params": [],
+              "type": "last"
+            },
+            "type": "query"
+          }
+        ],
+        "executionErrorState": "alerting",
+        "for": "1m",
+        "frequency": "30s",
+        "handler": 1,
+        "name": "Astrazeneca alert",
+        "noDataState": "alerting",
+        "notifications": []
+      },
+      "datasource": "InfluxDB",
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 100,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "graph": false,
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 6,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "#EAB839",
+                "value": 4
+              },
+              {
+                "color": "red",
+                "value": 7
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 14,
+        "x": 0,
+        "y": 22
+      },
+      "id": 12,
+      "links": [],
+      "options": {
+        "graph": {},
+        "legend": {
+          "calcs": [
+            "mean",
+            "lastNotNull",
+            "max",
+            "min",
+            "sum"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      },
+      "pluginVersion": "7.4.0",
+      "targets": [
+        {
+          "alias": "Astrazeneca - $tag_centro - Heladera n $tag_heladera",
+          "groupBy": [
+            {
+              "params": [
+                "$__interval"
+              ],
+              "type": "time"
+            },
+            {
+              "params": [
+                "centro"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "heladera"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "vacuna"
+              ],
+              "type": "tag"
+            },
+            {
+              "params": [
+                "null"
+              ],
+              "type": "fill"
+            }
+          ],
+          "hide": false,
+          "measurement": "mqtt_consumer",
+          "orderByTime": "ASC",
+          "policy": "default",
+          "query": "SELECT mean(\"temperature\") FROM \"mqtt_consumer\" WHERE (\"topic\" = 'unla/temperature' AND \"centro\" = 'ioma' OR \"centro\" = 'unla')  AND \"vacuna\" = 'astrazeneca' AND $timeFilter GROUP BY time($__interval), \"centro\", \"heladera\", \"vacuna\" fill(null)",
+          "rawQuery": true,
+          "refId": "Astrazeneca",
+          "resultFormat": "time_series",
+          "select": [
+            [
+              {
+                "params": [
+                  "temperature"
+                ],
+                "type": "field"
+              },
+              {
+                "params": [],
+                "type": "mean"
+              }
+            ]
+          ],
+          "tags": [
+            {
+              "key": "topic",
+              "operator": "=",
+              "value": "unla/temperature"
+            },
+            {
+              "condition": "AND",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            },
+            {
+              "condition": "OR",
+              "key": "centro",
+              "operator": "=",
+              "value": "ioma"
+            }
+          ]
+        }
+      ],
+      "thresholds": [
+        {
+          "colorMode": "critical",
+          "op": "gt",
+          "value": 7,
+          "visible": true
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Astrazeneca",
+      "type": "timeseries"
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 27,
+  "schemaVersion": 30,
   "style": "dark",
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {
@@ -588,5 +1393,5 @@
   "timezone": "browser",
   "title": "Centros vacunatorios",
   "uid": "P-BEgsdMz",
-  "version": 9
+  "version": 6
 }
